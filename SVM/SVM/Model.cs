@@ -48,7 +48,7 @@ namespace SVM
         /// <summary>
         /// Total number of support vectors.
         /// </summary>
-        public int SupportVectorCount { get { return SupportVectors.Length; } }
+        public int SupportVectorCount { get; set; }
 
         /// <summary>
         /// The support vectors.
