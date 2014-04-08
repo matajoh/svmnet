@@ -55,7 +55,6 @@
     <Compile Include="RangeTransform.cs" />
     <Compile Include="Scaling.cs" />
     <Compile Include="Solver.cs" />
-    <Compile Include="SupportClass.cs" />
     <Compile Include="SVMExtensions.cs" />
     <Compile Include="TemporaryCulture.cs" />
     <Compile Include="Training.cs" />

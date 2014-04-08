@@ -83,7 +83,21 @@ namespace SVM
         /// <returns>{index}:{value}</returns>
         public override string ToString()
         {
-            return string.Format("{0}:{1}", _index, _value);
+            return string.Format("{0}:{1}", _index, _value.Truncate());
+        }
+
+        public override bool Equals(object obj)
+        {
+            Node other = obj as Node;
+            if(other == null)
+                return false;
+
+            return _index == other._index && _value.Truncate() == other._value.Truncate();
+        }
+
+        public override int GetHashCode()
+        {
+            return _index.GetHashCode() + _value.GetHashCode();
         }
 
         #region IComparable<Node> Members

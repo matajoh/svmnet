@@ -92,6 +92,41 @@ namespace SVM
         /// </summary>
         public int[] NumberOfSVPerClass{get;set;}
 
+        public override bool Equals(object obj)
+        {
+            Model test = obj as Model;
+            if (test == null)
+                return false;
+
+            bool same = ClassLabels.IsEqual(test.ClassLabels);
+            same = same && NumberOfClasses == test.NumberOfClasses;
+            same = same && NumberOfSVPerClass.IsEqual(test.NumberOfSVPerClass);
+            if(PairwiseProbabilityA != null)
+                same = same && PairwiseProbabilityA.IsEqual(test.PairwiseProbabilityA);
+            if(PairwiseProbabilityB != null)
+                same = same && PairwiseProbabilityB.IsEqual(test.PairwiseProbabilityB);
+            same = same && Parameter.Equals(test.Parameter);
+            same = same && Rho.IsEqual(test.Rho);
+            same = same && SupportVectorCoefficients.IsEqual(test.SupportVectorCoefficients);
+            same = same && SupportVectorCount == test.SupportVectorCount;
+            same = same && SupportVectors.IsEqual(test.SupportVectors);
+            return same;
+        }
+        
+        public override int GetHashCode()
+        {
+            return ClassLabels.ComputeHashcode() +
+                NumberOfClasses.GetHashCode() +
+                NumberOfSVPerClass.ComputeHashcode() +
+                PairwiseProbabilityA.ComputeHashcode() +
+                PairwiseProbabilityB.ComputeHashcode() +
+                Parameter.GetHashCode() +
+                Rho.ComputeHashcode() +
+                SupportVectorCoefficients.ComputeHashcode() +
+                SupportVectorCount.GetHashCode() +
+                SupportVectors.ComputeHashcode();
+        }
+
         /// <summary>
         /// Reads a Model from the provided file.
         /// </summary>
@@ -293,27 +328,27 @@ namespace SVM
 
             Parameter param = model.Parameter;
 
-            output.Write("svm_type " + param.SvmType + "\n");
-            output.Write("kernel_type " + param.KernelType + "\n");
+            output.Write("svm_type {0}\n", param.SvmType);
+            output.Write("kernel_type {0}\n", param.KernelType);
 
             if (param.KernelType == KernelType.POLY)
-                output.Write("degree " + param.Degree + "\n");
+                output.Write("degree {0}\n", param.Degree);
 
             if (param.KernelType == KernelType.POLY || param.KernelType == KernelType.RBF || param.KernelType == KernelType.SIGMOID)
-                output.Write("gamma " + param.Gamma + "\n");
+                output.Write("gamma {0:0.000000}\n", param.Gamma);
 
             if (param.KernelType == KernelType.POLY || param.KernelType == KernelType.SIGMOID)
-                output.Write("coef0 " + param.Coefficient0 + "\n");
+                output.Write("coef0 {0:0.000000}\n", param.Coefficient0);
 
             int nr_class = model.NumberOfClasses;
             int l = model.SupportVectorCount;
-            output.Write("nr_class " + nr_class + "\n");
-            output.Write("total_sv " + l + "\n");
+            output.Write("nr_class {0}\n", nr_class);
+            output.Write("total_sv {0}\n", l);
 
             {
                 output.Write("rho");
                 for (int i = 0; i < nr_class * (nr_class - 1) / 2; i++)
-                    output.Write(" " + model.Rho[i]);
+                    output.Write(" {0:0.000000}", model.Rho[i]);
                 output.Write("\n");
             }
 
@@ -321,7 +356,7 @@ namespace SVM
             {
                 output.Write("label");
                 for (int i = 0; i < nr_class; i++)
-                    output.Write(" " + model.ClassLabels[i]);
+                    output.Write(" {0}", model.ClassLabels[i]);
                 output.Write("\n");
             }
 
@@ -330,14 +365,14 @@ namespace SVM
             {
                 output.Write("probA");
                 for (int i = 0; i < nr_class * (nr_class - 1) / 2; i++)
-                    output.Write(" " + model.PairwiseProbabilityA[i]);
+                    output.Write(" {0:0.000000}", model.PairwiseProbabilityA[i]);
                 output.Write("\n");
             }
             if (model.PairwiseProbabilityB != null)
             {
                 output.Write("probB");
                 for (int i = 0; i < nr_class * (nr_class - 1) / 2; i++)
-                    output.Write(" " + model.PairwiseProbabilityB[i]);
+                    output.Write(" {0:0.000000}", model.PairwiseProbabilityB[i]);
                 output.Write("\n");
             }
 
@@ -345,7 +380,7 @@ namespace SVM
             {
                 output.Write("nr_sv");
                 for (int i = 0; i < nr_class; i++)
-                    output.Write(" " + model.NumberOfSVPerClass[i]);
+                    output.Write(" {0}", model.NumberOfSVPerClass[i]);
                 output.Write("\n");
             }
 
@@ -356,23 +391,23 @@ namespace SVM
             for (int i = 0; i < l; i++)
             {
                 for (int j = 0; j < nr_class - 1; j++)
-                    output.Write(sv_coef[j][i] + " ");
+                    output.Write("{0:0.000000} ", sv_coef[j][i]);
 
                 Node[] p = SV[i];
                 if (p.Length == 0)
                 {
-                    output.WriteLine();
+                    output.Write("\n");
                     continue;
                 }
                 if (param.KernelType == KernelType.PRECOMPUTED)
-                    output.Write("0:{0}", (int)p[0].Value);
+                    output.Write("0:{0:0.000000}", (int)p[0].Value);
                 else
                 {
-                    output.Write("{0}:{1}", p[0].Index, p[0].Value);
+                    output.Write("{0}:{1:0.000000}", p[0].Index, p[0].Value);
                     for (int j = 1; j < p.Length; j++)
-                        output.Write(" {0}:{1}", p[j].Index, p[j].Value);
+                        output.Write(" {0}:{1:0.000000}", p[j].Index, p[j].Value);
                 }
-                output.WriteLine();
+                output.Write("\n");
             }
 
             output.Flush();

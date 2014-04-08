@@ -82,221 +82,127 @@ namespace SVM
 	[Serializable]
 	public class Parameter : ICloneable
 	{
-        private SvmType _svmType;
-        private KernelType _kernelType;
-        private int _degree;
-        private double _gamma;
-        private double _coef0;
-
-        private double _cacheSize;
-        private double _C;
-        private double _eps;
-
-        private Dictionary<int, double> _weights;
-        private double _nu;
-        private double _p;
-        private bool _shrinking;
-        private bool _probability;
-
         /// <summary>
         /// Default Constructor.  Gives good default values to all parameters.
         /// </summary>
         public Parameter()
         {
-            _svmType = SvmType.C_SVC;
-            _kernelType = KernelType.RBF;
-            _degree = 3;
-            _gamma = 0; // 1/k
-            _coef0 = 0;
-            _nu = 0.5;
-            _cacheSize = 40;
-            _C = 1;
-            _eps = 1e-3;
-            _p = 0.1;
-            _shrinking = true;
-            _probability = false;
-            _weights = new Dictionary<int, double>();
+            SvmType = SvmType.C_SVC;
+            KernelType = KernelType.RBF;
+            Degree = 3;
+            Gamma = 0; // 1/k
+            Coefficient0 = 0;
+            Nu = 0.5;
+            CacheSize = 40;
+            C = 1;
+            EPS = 1e-3;
+            P = 0.1;
+            Shrinking = true;
+            Probability = false;
+            Weights = new Dictionary<int, double>();
         }
 
         /// <summary>
         /// Type of SVM (default C-SVC)
         /// </summary>
-        public SvmType SvmType
-        {
-            get
-            {
-                return _svmType;
-            }
-            set
-            {
-                _svmType = value;
-            }
-        }
+        public SvmType SvmType{get;set;}
+
         /// <summary>
         /// Type of kernel function (default Polynomial)
         /// </summary>
-        public KernelType KernelType
-        {
-            get
-            {
-                return _kernelType;
-            }
-            set
-            {
-                _kernelType = value;
-            }
-        }
+        public KernelType KernelType{get;set;}
+
         /// <summary>
         /// Degree in kernel function (default 3).
         /// </summary>
-        public int Degree
-        {
-            get
-            {
-                return _degree;
-            }
-            set
-            {
-                _degree = value;
-            }
-        }
+        public int Degree{get;set;}
+
         /// <summary>
         /// Gamma in kernel function (default 1/k)
         /// </summary>
-        public double Gamma
-        {
-            get
-            {
-                return _gamma;
-            }
-            set
-            {
-                _gamma = value;
-            }
-        }
+        public double Gamma{get;set;}
+
         /// <summary>
         /// Zeroeth coefficient in kernel function (default 0)
         /// </summary>
-        public double Coefficient0
-        {
-            get
-            {
-                return _coef0;
-            }
-            set
-            {
-                _coef0 = value;
-            }
-        }
+        public double Coefficient0{get;set;}
 		
         /// <summary>
         /// Cache memory size in MB (default 100)
         /// </summary>
-        public double CacheSize
-        {
-            get
-            {
-                return _cacheSize;
-            }
-            set
-            {
-                _cacheSize = value;
-            }
-        }
+        public double CacheSize{get;set;}
+
         /// <summary>
         /// Tolerance of termination criterion (default 0.001)
         /// </summary>
-        public double EPS
-        {
-            get
-            {
-                return _eps;
-            }
-            set
-            {
-                _eps = value;
-            }
-        }
+        public double EPS{get;set;}
+
         /// <summary>
         /// The parameter C of C-SVC, epsilon-SVR, and nu-SVR (default 1)
         /// </summary>
-        public double C
-        {
-            get
-            {
-                return _C;
-            }
-            set
-            {
-                _C = value;
-            }
-        }
+        public double C{get;set;}
 
         /// <summary>
         /// Contains custom weights for class labels.  Default weight value is 1.
         /// </summary>
-        public Dictionary<int,double> Weights
-        {
-            get{
-                return _weights;
-            }
-        }
+        public Dictionary<int,double> Weights{get; private set;}
 
         /// <summary>
         /// The parameter nu of nu-SVC, one-class SVM, and nu-SVR (default 0.5)
         /// </summary>
-        public double Nu
-        {
-            get
-            {
-                return _nu;
-            }
-            set
-            {
-                _nu = value;
-            }
-        }
+        public double Nu{get;set;}
+
         /// <summary>
         /// The epsilon in loss function of epsilon-SVR (default 0.1)
         /// </summary>
-        public double P
-        {
-            get
-            {
-                return _p;
-            }
-            set
-            {
-                _p = value;
-            }
-        }
+        public double P{get;set;}
+
         /// <summary>
         /// Whether to use the shrinking heuristics, (default True)
         /// </summary>
-        public bool Shrinking
-        {
-            get
-            {
-                return _shrinking;
-            }
-            set
-            {
-                _shrinking = value;
-            }
-        }
+        public bool Shrinking{get;set;}
+
         /// <summary>
         /// Whether to train an SVC or SVR model for probability estimates, (default False)
         /// </summary>
-        public bool Probability
+        public bool Probability{get;set;}
+
+        public override bool Equals(object obj)
         {
-            get
-            {
-                return _probability;
-            }
-            set
-            {
-                _probability = value;
-            }
+            Parameter other = obj as Parameter;
+            if (other == null)
+                return false;
+
+            return other.C == C &&
+                other.CacheSize == CacheSize &&
+                other.Coefficient0 == Coefficient0 &&
+                other.Degree == Degree &&
+                other.EPS == EPS &&
+                other.Gamma == Gamma &&
+                other.KernelType == KernelType &&
+                other.Nu == Nu &&
+                other.P == P &&
+                other.Probability == Probability &&
+                other.Shrinking == Shrinking &&
+                other.SvmType == SvmType &&
+                other.Weights.ToArray().IsEqual(Weights.ToArray());
+        }
+
+        public override int GetHashCode()
+        {
+            return C.GetHashCode() +
+                CacheSize.GetHashCode() +
+                Coefficient0.GetHashCode() +
+                Degree.GetHashCode() +
+                EPS.GetHashCode() +
+                Gamma.GetHashCode() +
+                KernelType.GetHashCode() +
+                Nu.GetHashCode() +
+                P.GetHashCode() +
+                Probability.GetHashCode() +
+                Shrinking.GetHashCode() +
+                SvmType.GetHashCode() +
+                Weights.ToArray().ComputeHashcode();
         }
 
 

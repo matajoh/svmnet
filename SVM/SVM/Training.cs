@@ -71,6 +71,12 @@ namespace SVM
                         ++total_correct;
             return (double)total_correct / problem.Count;
         }
+
+        public static void SetRandomSeed(int seed)
+        {
+            Procedures.setRandomSeed(seed);
+        }
+
         /// <summary>
         /// Legacy.  Allows use as if this was svm_train.  See libsvm documentation for details on which arguments to pass.
         /// </summary>

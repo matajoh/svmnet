@@ -28,14 +28,9 @@ namespace SVM
     /// <summary>
     /// Encapsulates a problem, or set of vectors which must be classified.
     /// </summary>
-	[Serializable]
-	public class Problem
-	{
-        private int _count;
-        private double[] _Y;
-        private Node[][] _X;
-        private int _maxIndex;
-
+    [Serializable]
+    public class Problem
+    {
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -45,10 +40,10 @@ namespace SVM
         /// <param name="maxIndex">Maximum index for a vector</param>
         public Problem(int count, double[] y, Node[][] x, int maxIndex)
         {
-            _count = count;
-            _Y = y;
-            _X = x;
-            _maxIndex = maxIndex;
+            Count = count;
+            Y = y;
+            X = x;
+            MaxIndex = maxIndex;
         }
         /// <summary>
         /// Empty Constructor.  Nothing is initialized.
@@ -59,58 +54,41 @@ namespace SVM
         /// <summary>
         /// Number of vectors.
         /// </summary>
-        public int Count
-        {
-            get
-            {
-                return _count;
-            }
-            set
-            {
-                _count = value;
-            }
-        }
+        public int Count { get; set; }
+
         /// <summary>
         /// Class labels.
         /// </summary>
-        public double[] Y
-        {
-            get
-            {
-                return _Y;
-            }
-            set
-            {
-                _Y = value;
-            }
-        }
+        public double[] Y { get; set; }
+
         /// <summary>
         /// Vector data.
         /// </summary>
-        public Node[][] X
-        {
-            get
-            {
-                return _X;
-            }
-            set
-            {
-                _X = value;
-            }
-        }
+        public Node[][] X { get; set; }
+
         /// <summary>
         /// Maximum index for a vector.
         /// </summary>
-        public int MaxIndex
+        public int MaxIndex { get; set; }
+
+        public override bool Equals(object obj)
         {
-            get
-            {
-                return _maxIndex;
-            }
-            set
-            {
-                _maxIndex = value;
-            }
+            Problem other = obj as Problem;
+            if (other == null)
+                return false;
+
+            return other.Count == Count &&
+                other.MaxIndex == MaxIndex &&
+                other.X.IsEqual(X) &&
+                other.Y.IsEqual(Y);
+        }
+
+        public override int GetHashCode()
+        {
+            return Count.GetHashCode() +
+                MaxIndex.GetHashCode() +
+                X.ComputeHashcode() +
+                Y.ComputeHashcode();
         }
 
         /// <summary>
@@ -165,8 +143,8 @@ namespace SVM
             {
                 output.Write(problem.Y[i]);
                 for (int j = 0; j < problem.X[i].Length; j++)
-                    output.Write(" {0}:{1}", problem.X[i][j].Index, problem.X[i][j].Value);
-                output.WriteLine();
+                    output.Write(" {0}:{1:0.000000}", problem.X[i][j].Index, problem.X[i][j].Value);
+                output.Write("\n");
             }
             output.Flush();
 

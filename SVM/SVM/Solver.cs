@@ -417,7 +417,7 @@ namespace SVM
         }
 
         // return 1 if already optimal, return 0 otherwise
-        int select_working_set(int[] working_set)
+        protected virtual int select_working_set(int[] working_set)
         {
             // return i,j such that
             // i: maximizes -y_i * grad(f)_i, i in I_up(\alpha)
@@ -536,7 +536,7 @@ namespace SVM
                 return (false);
         }
 
-        void do_shrinking()
+        protected virtual void do_shrinking()
         {
             int i;
             double Gmax1 = -INF;		// max { -y_i * grad(f)_i | i in I_up(\alpha) }
@@ -596,7 +596,7 @@ namespace SVM
                 }
         }
 
-        double calculate_rho()
+        protected virtual double calculate_rho()
         {
             double r;
             int nr_free = 0;
@@ -654,7 +654,7 @@ namespace SVM
         }
 
         // return 1 if already optimal, return 0 otherwise
-        int select_working_set(int[] working_set)
+        protected override int select_working_set(int[] working_set)
         {
             // return i,j such that y_i = y_j and
             // i: maximizes -y_i * grad(f)_i, i in I_up(\alpha)
@@ -786,7 +786,7 @@ namespace SVM
                 return (false);
         }
 
-        void do_shrinking()
+        protected override void do_shrinking()
         {
             double Gmax1 = -INF;	// max { -y_i * grad(f)_i | y_i = +1, i in I_up(\alpha) }
             double Gmax2 = -INF;	// max { y_i * grad(f)_i | y_i = +1, i in I_low(\alpha) }
@@ -838,7 +838,7 @@ namespace SVM
                 }
         }
 
-        double calculate_rho()
+        protected override double calculate_rho()
         {
             int nr_free1 = 0, nr_free2 = 0;
             double ub1 = INF, ub2 = INF;
@@ -1056,9 +1056,14 @@ namespace SVM
         // construct and solve various formulations
         //
         public const int LIBSVM_VERSION = 318;
-        private static readonly Random rand = new Random();
+        private static Random rand = new Random();
 
         private static TextWriter svm_print_stdout = Console.Out;
+
+        public static void setRandomSeed(int seed)
+        {
+            rand = new Random(seed);
+        }
 
         public static void info(String s)
         {
