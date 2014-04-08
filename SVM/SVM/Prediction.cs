@@ -121,7 +121,7 @@ namespace SVM
         /// <param name="model">The Model to use for prediction</param>
         /// <param name="x">The vector for which to predict class</param>
         /// <returns>The result</returns>
-        public static double Predict(Model model, Node[] x)
+        public static double Predict(this Model model, Node[] x)
         {
             return Procedures.svm_predict(model, x);
         }
@@ -132,7 +132,7 @@ namespace SVM
         /// <param name="model">Model to use for prediction</param>
         /// <param name="x">The vector for which to predict the class distribution</param>
         /// <returns>A probability distribtion over classes</returns>
-        public static double[] PredictProbability(Model model, Node[] x)
+        public static double[] PredictProbability(this Model model, Node[] x)
         {
             SvmType svm_type = Procedures.svm_get_svm_type(model);
             if (svm_type != SvmType.C_SVC && svm_type != SvmType.NU_SVC)

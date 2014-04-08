@@ -52,7 +52,7 @@
   <ItemGroup>
     <Compile Include="IOTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BinaryClassificationTests.cs" />
+    <Compile Include="ClassificationTests.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
