@@ -88,9 +88,33 @@ namespace SVMTest
             return prob;
         }
 
+        public static Problem CreateRegressionProblem(int count, bool isTraining = true)
+        {
+            Problem prob = new Problem();
+            prob.Count = count;
+            prob.MaxIndex = 2;
+
+            Random rand = new Random(isTraining ? TRAINING_SEED : TESTING_SEED);
+
+            List<double> labels = new List<double>();
+            List<Node[]> data = new List<Node[]>();
+            for (int i = 0; i < count; i++)
+            {
+                double y = rand.NextDouble() * 10 - 5;
+                double z = rand.NextDouble() * 10 - 5;
+                double x = 2 * y + z;
+                data.Add(new Node[] { new Node(1, y), new Node(2, z) });
+                labels.Add(x);
+            }
+            prob.X = data.ToArray();
+            prob.Y = labels.ToArray();
+
+            return prob;
+        }
+
         public static double TestTwoClassModel(int count, SvmType svm, KernelType kernel, bool probability = false, string outputFile = null)
         {
-            Problem train = Utilities.CreateTwoClassProblem(count);
+            Problem train = CreateTwoClassProblem(count);
             Parameter param = new Parameter();
             RangeTransform transform = RangeTransform.Compute(train);
             Problem scaled = transform.Scale(train);
@@ -106,7 +130,7 @@ namespace SVMTest
 
             Model model = Training.Train(scaled, param);            
 
-            Problem test = Utilities.CreateTwoClassProblem(count, false);
+            Problem test = CreateTwoClassProblem(count, false);
             scaled = transform.Scale(test);
             return Prediction.Predict(scaled, outputFile, model, false);
         }
@@ -129,7 +153,25 @@ namespace SVMTest
 
             Model model = Training.Train(scaled, param);
 
-            Problem test = Utilities.CreateMulticlassProblem(numberOfClasses, count, false);
+            Problem test = CreateMulticlassProblem(numberOfClasses, count, false);
+            scaled = transform.Scale(test);
+            return Prediction.Predict(scaled, outputFile, model, false);
+        }
+
+        public static double TestRegressionModel(int count, SvmType svm, KernelType kernel, string outputFile = null)
+        {
+            Problem train = CreateRegressionProblem(count);
+            Parameter param = new Parameter();
+            RangeTransform transform = RangeTransform.Compute(train);
+            Problem scaled = transform.Scale(train);
+            param.Gamma = 1.0 / 2;
+            param.SvmType = svm;
+            param.KernelType = kernel;
+            param.Degree = 2;
+
+            Model model = Training.Train(scaled, param);
+
+            Problem test = CreateRegressionProblem(count, false);
             scaled = transform.Scale(test);
             return Prediction.Predict(scaled, outputFile, model, false);
         }

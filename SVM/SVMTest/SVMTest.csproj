@@ -53,6 +53,7 @@
     <Compile Include="IOTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ClassificationTests.cs" />
+    <Compile Include="RegressionTests.cs" />
     <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>

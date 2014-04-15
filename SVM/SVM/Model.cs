@@ -192,6 +192,8 @@ namespace SVM
                         break;
                         
                     case "kernel_type":
+                        if (arg == "polynomial")
+                            arg = "poly";
                         param.KernelType = (KernelType)Enum.Parse(typeof(KernelType), arg.ToUpper());
                         break;
 

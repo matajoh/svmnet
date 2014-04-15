@@ -18,6 +18,7 @@
 
 
 using System;
+using System.Linq;
 using System.IO;
 using System.Diagnostics;
 
@@ -112,7 +113,32 @@ namespace SVM
             }
             if(output != null)
                 output.Close();
-            return (double)correct / total;
+
+            if (model.Parameter.SvmType == SvmType.EPSILON_SVR || model.Parameter.SvmType == SvmType.NU_SVR)
+                return error / total;
+            else return (double)correct / total;
+        }
+
+        /// <summary>
+        /// Predict the labels for all the data points in a problem.
+        /// </summary>
+        /// <param name="model">The model to use</param>
+        /// <param name="problem">The problem to solve</param>
+        /// <returns>The predicted labels</returns>
+        public static double[] PredictLabels(this Model model, Problem problem)
+        {
+            return problem.X.Select(o => model.Predict(o)).ToArray();
+        }
+
+        /// <summary>
+        /// Predict the probability distributions over all labels for each data point in a problem.
+        /// </summary>
+        /// <param name="model">The model to use</param>
+        /// <param name="problem">The problem to solve</param>
+        /// <returns>A distribution over labels for each data point</returns>
+        public static double[][] PredictLabelsProbability(this Model model, Problem problem)
+        {
+            return problem.X.Select(o => model.PredictProbability(o)).ToArray();
         }
 
         /// <summary>
