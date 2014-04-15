@@ -13,7 +13,7 @@ namespace SVMTest
         [TestMethod]
         public void ReadProblem()
         {
-            Problem expected = Utilities.CreateTwoClassProblem(100);
+            Problem expected = SVMUtilities.CreateTwoClassProblem(100);
             Problem actual = Problem.Read("train0.problem");
 
             Assert.AreEqual(expected, actual);
@@ -22,7 +22,7 @@ namespace SVMTest
         [TestMethod]
         public void WriteProblem()
         {
-            Problem prob = Utilities.CreateTwoClassProblem(100);
+            Problem prob = SVMUtilities.CreateTwoClassProblem(100);
             using (MemoryStream stream = new MemoryStream())
             using (StreamReader input = new StreamReader("train0.problem"))
             {
@@ -36,13 +36,13 @@ namespace SVMTest
         [TestMethod]
         public void ReadModel()
         {
-            Problem train = Utilities.CreateTwoClassProblem(100);
+            Problem train = SVMUtilities.CreateTwoClassProblem(100);
             Parameter param = new Parameter();
             RangeTransform transform = RangeTransform.Compute(train);
             Problem scaled = transform.Scale(train);
             param.KernelType = KernelType.LINEAR;
 
-            Training.SetRandomSeed(Utilities.TRAINING_SEED);
+            Training.SetRandomSeed(SVMUtilities.TRAINING_SEED);
             Model expected = Training.Train(scaled, param);
             Model actual = Model.Read("svm0.model");
 
@@ -52,13 +52,13 @@ namespace SVMTest
         [TestMethod]
         public void WriteModel()
         {
-            Problem train = Utilities.CreateTwoClassProblem(100);
+            Problem train = SVMUtilities.CreateTwoClassProblem(100);
             Parameter param = new Parameter();
             RangeTransform transform = RangeTransform.Compute(train);
             Problem scaled = transform.Scale(train);
             param.KernelType = KernelType.LINEAR;
 
-            Training.SetRandomSeed(Utilities.TRAINING_SEED);
+            Training.SetRandomSeed(SVMUtilities.TRAINING_SEED);
             Model model = Training.Train(scaled, param);
 
             using (MemoryStream stream = new MemoryStream())

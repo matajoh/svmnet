@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SVMTest
 {
-    static class Utilities
+    public static class SVMUtilities
     {
         private const double SCALE = 100;
         public const int TRAINING_SEED = 20080524;
@@ -110,70 +110,6 @@ namespace SVMTest
             prob.Y = labels.ToArray();
 
             return prob;
-        }
-
-        public static double TestTwoClassModel(int count, SvmType svm, KernelType kernel, bool probability = false, string outputFile = null)
-        {
-            Problem train = CreateTwoClassProblem(count);
-            Parameter param = new Parameter();
-            RangeTransform transform = RangeTransform.Compute(train);
-            Problem scaled = transform.Scale(train);
-            param.Gamma = .5;
-            param.SvmType = svm;
-            param.KernelType = kernel;
-            param.Probability = probability;
-            if (svm == SvmType.C_SVC)
-            {
-                param.Weights[-1] = 1;
-                param.Weights[1] = 1;
-            }
-
-            Model model = Training.Train(scaled, param);            
-
-            Problem test = CreateTwoClassProblem(count, false);
-            scaled = transform.Scale(test);
-            return Prediction.Predict(scaled, outputFile, model, false);
-        }
-
-        public static double TestMulticlassModel(int numberOfClasses, int count, SvmType svm, KernelType kernel, bool probability = false, string outputFile = null)
-        {
-            Problem train = Utilities.CreateMulticlassProblem(numberOfClasses, count);
-            Parameter param = new Parameter();
-            RangeTransform transform = RangeTransform.Compute(train);
-            Problem scaled = transform.Scale(train);
-            param.Gamma = 1.0 / 3;
-            param.SvmType = svm;
-            param.KernelType = kernel;
-            param.Probability = probability;
-            if (svm == SvmType.C_SVC)
-            {
-                for (int i = 0; i < numberOfClasses; i++)
-                    param.Weights[i] = 1;
-            }
-
-            Model model = Training.Train(scaled, param);
-
-            Problem test = CreateMulticlassProblem(numberOfClasses, count, false);
-            scaled = transform.Scale(test);
-            return Prediction.Predict(scaled, outputFile, model, false);
-        }
-
-        public static double TestRegressionModel(int count, SvmType svm, KernelType kernel, string outputFile = null)
-        {
-            Problem train = CreateRegressionProblem(count);
-            Parameter param = new Parameter();
-            RangeTransform transform = RangeTransform.Compute(train);
-            Problem scaled = transform.Scale(train);
-            param.Gamma = 1.0 / 2;
-            param.SvmType = svm;
-            param.KernelType = kernel;
-            param.Degree = 2;
-
-            Model model = Training.Train(scaled, param);
-
-            Problem test = CreateRegressionProblem(count, false);
-            scaled = transform.Scale(test);
-            return Prediction.Predict(scaled, outputFile, model, false);
-        }
+        }        
     }
 }

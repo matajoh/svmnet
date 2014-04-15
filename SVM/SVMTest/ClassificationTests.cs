@@ -17,7 +17,7 @@ namespace SVMTest
             {
                 foreach (KernelType kernel in kernelTypes)
                 {
-                    double score = Utilities.TestTwoClassModel(100, svm, kernel);
+                    double score = testTwoClassModel(100, svm, kernel);
 
                     Assert.AreEqual(1, score, .01, string.Format("SVM {0} with Kernel {1} did not train correctly", svm, kernel));
                 }
@@ -34,7 +34,7 @@ namespace SVMTest
             {
                 foreach (KernelType kernel in kernelTypes)
                 {
-                    double score = Utilities.TestTwoClassModel(100, svm, kernel, true);
+                    double score = testTwoClassModel(100, svm, kernel, true);
 
                     Assert.AreEqual(1, score, .01, string.Format("SVM {0} with Kernel {1} did not train correctly", svm, kernel));
                 }
@@ -51,7 +51,7 @@ namespace SVMTest
             {
                 foreach (KernelType kernel in kernelTypes)
                 {
-                    double score = Utilities.TestMulticlassModel(8, 100, svm, kernel);
+                    double score = testMulticlassModel(8, 100, svm, kernel);
 
                     Assert.AreEqual(1, score, .1, string.Format("SVM {0} with Kernel {1} did not train correctly", svm, kernel));
                 }
@@ -68,11 +68,57 @@ namespace SVMTest
             {
                 foreach (KernelType kernel in kernelTypes)
                 {
-                    double score = Utilities.TestMulticlassModel(8, 100, svm, kernel, true);
+                    double score = testMulticlassModel(8, 100, svm, kernel, true);
 
                     Assert.AreEqual(1, score, .1, string.Format("SVM {0} with Kernel {1} did not train correctly", svm, kernel));
                 }
             }
+        }
+
+        private double testTwoClassModel(int count, SvmType svm, KernelType kernel, bool probability = false, string outputFile = null)
+        {
+            Problem train = SVMUtilities.CreateTwoClassProblem(count);
+            Parameter param = new Parameter();
+            RangeTransform transform = RangeTransform.Compute(train);
+            Problem scaled = transform.Scale(train);
+            param.Gamma = .5;
+            param.SvmType = svm;
+            param.KernelType = kernel;
+            param.Probability = probability;
+            if (svm == SvmType.C_SVC)
+            {
+                param.Weights[-1] = 1;
+                param.Weights[1] = 1;
+            }
+
+            Model model = Training.Train(scaled, param);
+
+            Problem test = SVMUtilities.CreateTwoClassProblem(count, false);
+            scaled = transform.Scale(test);
+            return Prediction.Predict(scaled, outputFile, model, false);
+        }
+
+        private double testMulticlassModel(int numberOfClasses, int count, SvmType svm, KernelType kernel, bool probability = false, string outputFile = null)
+        {
+            Problem train = SVMUtilities.CreateMulticlassProblem(numberOfClasses, count);
+            Parameter param = new Parameter();
+            RangeTransform transform = RangeTransform.Compute(train);
+            Problem scaled = transform.Scale(train);
+            param.Gamma = 1.0 / 3;
+            param.SvmType = svm;
+            param.KernelType = kernel;
+            param.Probability = probability;
+            if (svm == SvmType.C_SVC)
+            {
+                for (int i = 0; i < numberOfClasses; i++)
+                    param.Weights[i] = 1;
+            }
+
+            Model model = Training.Train(scaled, param);
+
+            Problem test = SVMUtilities.CreateMulticlassProblem(numberOfClasses, count, false);
+            scaled = transform.Scale(test);
+            return Prediction.Predict(scaled, outputFile, model, false);
         }
     }
 }

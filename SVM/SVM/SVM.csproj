@@ -58,6 +58,7 @@
     <Compile Include="SVMExtensions.cs" />
     <Compile Include="TemporaryCulture.cs" />
     <Compile Include="Training.cs" />
+    <Compile Include="SVMUtilities.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
