@@ -20,9 +20,36 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SVM
 {
+    /// <summary>
+    /// Class representing a grid square result.
+    /// </summary>
+    public class GridSquare
+    {
+        /// <summary>
+        /// The C value
+        /// </summary>
+        public double C;
+        /// <summary>
+        /// The Gamma value
+        /// </summary>
+        public double Gamma;
+        /// <summary>
+        /// The cross validation score
+        /// </summary>
+        public double Score;
+
+        public override string ToString()
+        {
+            return string.Format("{0} {1} {2}", C, Gamma, Score);
+        }
+    }
+
     /// <summary>
     /// This class contains routines which perform parameter selection for a model which uses C-SVC and
     /// an RBF kernel.
@@ -57,6 +84,10 @@ namespace SVM
         /// Default power iteration step for the Gamma value (2)
         /// </summary>
         public const int G_STEP = 2;
+        /// <summary>
+        /// Used to control the degree of parallelism used in grid exploration.  Default value is the number of processors.
+        /// </summary>
+        public static int Threads = Environment.ProcessorCount;
 
         /// <summary>
         /// Returns a logarithmic list of values from minimum power of 2 to the maximum power of 2 using the provided iteration size.
@@ -79,18 +110,19 @@ namespace SVM
         /// divide it 5 times to allow 5-fold validation (training on 4/5 and validating on 1/5, 5 times).
         /// </summary>
         /// <param name="problem">The training data</param>
-        /// <param name="parameters">The parameters to use when optimizing</param>
-        /// <param name="outputFile">Output file for the parameter results.</param>
+        /// <param name="createParams">The parameters to use when optimizing</param>
+        /// <param name="report">Function used to report results</param>
         /// <param name="C">The optimal C value will be put into this variable</param>
         /// <param name="Gamma">The optimal Gamma value will be put into this variable</param>
-        public static void Grid(
+        /// <returns>A list of grid squares and their results</returns>
+        public static List<GridSquare> Grid(
             Problem problem,
-            Parameter parameters,
-            string outputFile,
+            Func<Parameter> createParams,
+            Action<GridSquare> report,
             out double C,
             out double Gamma)
         {
-            Grid(problem, parameters, GetList(MIN_C, MAX_C, C_STEP), GetList(MIN_G, MAX_G, G_STEP), outputFile, NFOLD, out C, out Gamma);
+            return Grid(problem, createParams, GetList(MIN_C, MAX_C, C_STEP), GetList(MIN_G, MAX_G, G_STEP), report, NFOLD, out C, out Gamma);
         }
         /// <summary>
         /// Performs a Grid parameter selection, trying all possible combinations of the two lists and returning the
@@ -98,72 +130,73 @@ namespace SVM
         /// divide it 5 times to allow 5-fold validation (training on 4/5 and validating on 1/5, 5 times).
         /// </summary>
         /// <param name="problem">The training data</param>
-        /// <param name="parameters">The parameters to use when optimizing</param>
+        /// <param name="createParams">The parameters to use when optimizing</param>
         /// <param name="CValues">The set of C values to use</param>
         /// <param name="GammaValues">The set of Gamma values to use</param>
-        /// <param name="outputFile">Output file for the parameter results.</param>
+        /// <param name="report">Function used to report results</param>
         /// <param name="C">The optimal C value will be put into this variable</param>
         /// <param name="Gamma">The optimal Gamma value will be put into this variable</param>
-        public static void Grid(
+        /// <returns>A list of grid squares and their results</returns>
+        public static List<GridSquare> Grid(
             Problem problem,
-            Parameter parameters,
+            Func<Parameter> createParams,
             List<double> CValues,
             List<double> GammaValues,
-            string outputFile,
+            Action<GridSquare> report,
             out double C,
             out double Gamma)
         {
-            Grid(problem, parameters, CValues, GammaValues, outputFile, NFOLD, out C, out Gamma);
+            return Grid(problem, createParams, CValues, GammaValues, report, NFOLD, out C, out Gamma);
         }
+
         /// <summary>
         /// Performs a Grid parameter selection, trying all possible combinations of the two lists and returning the
         /// combination which performed best.  Use this method if validation data isn't available, as it will
         /// divide the training data and train on a portion of it and test on the rest.
         /// </summary>
         /// <param name="problem">The training data</param>
-        /// <param name="parameters">The parameters to use when optimizing</param>
+        /// <param name="createParams">The parameters to use when optimizing</param>
         /// <param name="CValues">The set of C values to use</param>
         /// <param name="GammaValues">The set of Gamma values to use</param>
-        /// <param name="outputFile">Output file for the parameter results.</param>
+        /// <param name="report">Function used to report results</param>
         /// <param name="nrfold">The number of times the data should be divided for validation</param>
         /// <param name="C">The optimal C value will be placed in this variable</param>
         /// <param name="Gamma">The optimal Gamma value will be placed in this variable</param>
-        public static void Grid(
+        /// <returns>A list of grid squares and their results</returns>
+        public static List<GridSquare> Grid(
             Problem problem,
-            Parameter parameters,
+            Func<Parameter> createParams,
             List<double> CValues, 
             List<double> GammaValues, 
-            string outputFile,
+            Action<GridSquare> report,
             int nrfold,
             out double C,
             out double Gamma)
         {
             C = 0;
-            Gamma = 0;
-            double crossValidation = double.MinValue;
-            StreamWriter output = null;
-            if(outputFile != null)
-                output = new StreamWriter(outputFile);
-            for(int i=0; i<CValues.Count; i++)
-                for (int j = 0; j < GammaValues.Count; j++)
-                {
-                    parameters.C = CValues[i];
-                    parameters.Gamma = GammaValues[j];
-                    double test = Training.PerformCrossValidation(problem, parameters, nrfold);
-                    Console.Write("{0} {1} {2}", parameters.C, parameters.Gamma, test);
-                    if(output != null)
-                        output.WriteLine("{0} {1} {2}", parameters.C, parameters.Gamma, test);
-                    if (test > crossValidation)
-                    {
-                        C = parameters.C;
-                        Gamma = parameters.Gamma;
-                        crossValidation = test;
-                        Console.WriteLine(" New Maximum!");
-                    }
-                    else Console.WriteLine();
-                }
-            if(output != null)
-                output.Close();
+            Gamma = 0;            
+
+            List<GridSquare> squares = new List<GridSquare>();
+            foreach (double testC in CValues)
+                foreach (double testGamma in GammaValues)
+                    squares.Add(new GridSquare { C = testC, Gamma = testGamma });
+
+            ThreadLocal<Parameter> parameters = new ThreadLocal<Parameter>(() => createParams());
+
+            Parallel.ForEach(squares, new ParallelOptions{MaxDegreeOfParallelism=Threads}, square =>
+            {
+                parameters.Value.C = square.C;
+                parameters.Value.Gamma = square.Gamma;
+                square.Score = Training.PerformCrossValidation(problem, parameters.Value, nrfold);
+                if(report != null)
+                    report(square);                
+            });
+
+            GridSquare best = squares.OrderByDescending(o => o.Score).First();
+            C = best.C;
+            Gamma = best.Gamma;
+
+            return squares.OrderBy(o => o.C).ThenBy(o => o.Gamma).ToList();
         }
         /// <summary>
         /// Performs a Grid parameter selection, trying all possible combinations of the two lists and returning the
@@ -171,19 +204,20 @@ namespace SVM
         /// </summary>
         /// <param name="problem">The training data</param>
         /// <param name="validation">The validation data</param>
-        /// <param name="parameters">The parameters to use when optimizing</param>
-        /// <param name="outputFile">The output file for the parameter results</param>
+        /// <param name="createParams">The parameters to use when optimizing</param>
+        /// <param name="report">Function used to report results</param>
         /// <param name="C">The optimal C value will be placed in this variable</param>
         /// <param name="Gamma">The optimal Gamma value will be placed in this variable</param>
-        public static void Grid(
+        /// <returns>A list of grid squares and their results</returns>
+        public static List<GridSquare> Grid(
             Problem problem,
             Problem validation,
-            Parameter parameters,
-            string outputFile,
+            Func<Parameter> createParams,
+            Action<GridSquare> report,
             out double C,
             out double Gamma)
         {
-            Grid(problem, validation, parameters, GetList(MIN_C, MAX_C, C_STEP), GetList(MIN_G, MAX_G, G_STEP), outputFile, out C, out Gamma);
+            return Grid(problem, validation, createParams, GetList(MIN_C, MAX_C, C_STEP), GetList(MIN_G, MAX_G, G_STEP), report, out C, out Gamma);
         }
         /// <summary>
         /// Performs a Grid parameter selection, trying all possible combinations of the two lists and returning the
@@ -191,49 +225,47 @@ namespace SVM
         /// </summary>
         /// <param name="problem">The training data</param>
         /// <param name="validation">The validation data</param>
-        /// <param name="parameters">The parameters to use when optimizing</param>
+        /// <param name="createParams">The parameters to use when optimizing</param>
         /// <param name="CValues">The C values to use</param>
         /// <param name="GammaValues">The Gamma values to use</param>
-        /// <param name="outputFile">The output file for the parameter results</param>
+        /// <param name="report">Function used to report results</param>
         /// <param name="C">The optimal C value will be placed in this variable</param>
         /// <param name="Gamma">The optimal Gamma value will be placed in this variable</param>
-        public static void Grid(
+        /// <returns>A list of grid squares and their results</returns>
+        public static List<GridSquare> Grid(
             Problem problem,
             Problem validation,
-            Parameter parameters,
+            Func<Parameter> createParams,
             List<double> CValues,
             List<double> GammaValues,
-            string outputFile,
+            Action<GridSquare> report,
             out double C,
             out double Gamma)
         {
             C = 0;
             Gamma = 0;
-            double maxScore = double.MinValue;
-            StreamWriter output = null;
-            if(outputFile != null)
-                output = new StreamWriter(outputFile);
-            for (int i = 0; i < CValues.Count; i++)
-                for (int j = 0; j < GammaValues.Count; j++)
-                {
-                    parameters.C = CValues[i];
-                    parameters.Gamma = GammaValues[j];
-                    Model model = Training.Train(problem, parameters);
-                    double test = Prediction.Predict(validation, "tmp.txt", model, false);
-                    Console.Write("{0} {1} {2}", parameters.C, parameters.Gamma, test);
-                    if(output != null)
-                        output.WriteLine("{0} {1} {2}", parameters.C, parameters.Gamma, test);
-                    if (test > maxScore)
-                    {
-                        C = parameters.C;
-                        Gamma = parameters.Gamma;
-                        maxScore = test;
-                        Console.WriteLine(" New Maximum!");
-                    }
-                    else Console.WriteLine();
-                }
-            if(output != null)
-                output.Close();
+
+            List<GridSquare> squares = new List<GridSquare>();
+            foreach (double testC in CValues)
+                foreach (double testGamma in GammaValues)
+                    squares.Add(new GridSquare { C = testC, Gamma = testGamma });
+            ThreadLocal<Parameter> parameters = new ThreadLocal<Parameter>(() => createParams());
+
+            Parallel.ForEach(squares, new ParallelOptions { MaxDegreeOfParallelism = Threads }, square =>
+            {
+                parameters.Value.C = square.C;
+                parameters.Value.Gamma = square.Gamma;
+                Model model = Training.Train(problem, parameters.Value);
+                square.Score = Prediction.Predict(validation, null, model, false);
+                if (report != null)
+                    report(square);
+            });
+
+            GridSquare best = squares.OrderByDescending(o => o.Score).First();
+            C = best.C;
+            Gamma = best.Gamma;
+
+            return squares.OrderBy(o=>o.C).ThenBy(o=>o.Gamma).ToList();
         }
     }
 }
