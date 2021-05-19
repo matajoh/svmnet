@@ -46,7 +46,7 @@ namespace SVM
             int correct = 0;
             int total = 0;
             double error = 0;
-            double sumv = 0, sumy = 0, sumvv = 0, sumyy = 0, sumvy = 0;
+            double sump = 0, sumt = 0, sumpp = 0, sumtt = 0, sumpt = 0;
             StreamWriter output = outputFile != null ? new StreamWriter(outputFile) : null;
 
             SvmType svm_type = Procedures.svm_get_svm_type(model);
@@ -77,16 +77,16 @@ namespace SVM
             }
             for (int i = 0; i < problem.Count; i++)
             {
-                double target = problem.Y[i];
+                double target_label = problem.Y[i];
                 Node[] x = problem.X[i];
 
-                double v;
+                double predict_label;
                 if (predict_probability && (svm_type == SvmType.C_SVC || svm_type == SvmType.NU_SVC))
                 {
-                    v = Procedures.svm_predict_probability(model, x, prob_estimates);
+                    predict_label = Procedures.svm_predict_probability(model, x, prob_estimates);
                     if (output != null)
                     {
-                        output.Write(v + " ");
+                        output.Write(predict_label + " ");
                         for (int j = 0; j < nr_class; j++)
                         {
                             output.Write(prob_estimates[j] + " ");
@@ -96,19 +96,19 @@ namespace SVM
                 }
                 else
                 {
-                    v = Procedures.svm_predict(model, x);
+                    predict_label = Procedures.svm_predict(model, x);
                     if(output != null)
-                        output.Write(v + "\n");
+                        output.Write(predict_label + "\n");
                 }
 
-                if (v == target)
+                if (predict_label == target_label)
                     ++correct;
-                error += (v - target) * (v - target);
-                sumv += v;
-                sumy += target;
-                sumvv += v * v;
-                sumyy += target * target;
-                sumvy += v * target;
+                error += (predict_label - target_label) * (predict_label - target_label);
+                sump += predict_label;
+                sumt += target_label;
+                sumpp += predict_label * predict_label;
+                sumtt += target_label * target_label;
+                sumpt += predict_label * target_label;
                 ++total;
             }
             if(output != null)
