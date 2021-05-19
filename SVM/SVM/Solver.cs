@@ -508,7 +508,7 @@ namespace SVM
                 }
             }
 
-            if (Gmax + Gmax2 < eps)
+            if (Gmax + Gmax2 < eps || Gmin_idx == -1)
                 return 1;
 
             working_set[0] = Gmax_idx;
@@ -1849,7 +1849,7 @@ namespace SVM
                     model.PairwiseProbabilityA = null;
                 }
 
-                int nnz = 0;
+                int total_sv = 0;
                 int[] nz_count = new int[nr_class];
                 model.NumberOfSVPerClass = new int[nr_class];
                 for (i = 0; i < nr_class; i++)
@@ -1859,17 +1859,17 @@ namespace SVM
                         if (nonzero[start[i] + j])
                         {
                             ++nSV;
-                            ++nnz;
+                            ++total_sv;
                         }
                     model.NumberOfSVPerClass[i] = nSV;
                     nz_count[i] = nSV;
                 }
 
-                info("Total nSV = " + nnz + "\n");
+                info("Total nSV = " + total_sv + "\n");
 
-                model.SupportVectorCount = nnz;
-                model.SupportVectors = new Node[nnz][];
-                model.SupportVectorIndices = new int[nnz];
+                model.SupportVectorCount = total_sv;
+                model.SupportVectors = new Node[total_sv][];
+                model.SupportVectorIndices = new int[total_sv];
                 p = 0;
                 for (i = 0; i < l; i++)
                     if (nonzero[i])
@@ -1885,7 +1885,7 @@ namespace SVM
 
                 model.SupportVectorCoefficients = new double[nr_class - 1][];
                 for (i = 0; i < nr_class - 1; i++)
-                    model.SupportVectorCoefficients[i] = new double[nnz];
+                    model.SupportVectorCoefficients[i] = new double[total_sv];
 
                 p = 0;
                 for (i = 0; i < nr_class; i++)
@@ -2172,7 +2172,13 @@ namespace SVM
                         pairwise_prob[j, i] = 1 - pairwise_prob[i, j];
                         k++;
                     }
-                multiclass_probability(nr_class, pairwise_prob, prob_estimates);
+                if (nr_class == 2)
+                {
+                    prob_estimates[0] = pairwise_prob[0, 1];
+                    prob_estimates[1] = pairwise_prob[1, 0];
+                }
+                else
+                    multiclass_probability(nr_class, pairwise_prob, prob_estimates);
 
                 int prob_max_idx = 0;
                 for (i = 1; i < nr_class; i++)
@@ -2189,12 +2195,26 @@ namespace SVM
             // svm_type
 
             SvmType svm_type = param.SvmType;
-
+            if (svm_type != SvmType.C_SVC &&
+               svm_type != SvmType.NU_SVC &&
+               svm_type != SvmType.ONE_CLASS &&
+               svm_type != SvmType.EPSILON_SVR &&
+               svm_type != SvmType.NU_SVR)
+                return "unknown svm type";
             // kernel_type, degree
 
             KernelType kernel_type = param.KernelType;
+            if (kernel_type != KernelType.LINEAR &&
+               kernel_type != KernelType.POLY &&
+               kernel_type != KernelType.RBF &&
+               kernel_type != KernelType.SIGMOID &&
+               kernel_type != KernelType.PRECOMPUTED)
+                return "unknown kernel type";
 
-            if (param.Gamma < 0)
+            if ((kernel_type == KernelType.POLY ||
+               kernel_type == KernelType.RBF ||
+               kernel_type == KernelType.SIGMOID) &&
+               param.Gamma < 0)
                 return "gamma < 0";
 
             if (param.Degree < 0)
